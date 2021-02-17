@@ -82,14 +82,14 @@ def main():
     keff_df.set_index("x",inplace=True)
 
     for fuel_temp in FUEL_TEMPS:
-        keff, keff_unc = extract_keff(f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}/o_{MODULE_NAME}-fuel-{str(''.join(c for c in str(list(cell_temps_dict.values())[0]) if c not in '.')).zfill(4)}.o")
+        keff, keff_unc = extract_keff(f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}/o_{MODULE_NAME}-fuel-{str(fuel_temp)}.o")
         keff_df.loc[fuel_temp, 'keff'] = keff
         keff_df.loc[fuel_temp, 'keff unc'] = keff_unc
 
     print(f"\nDataframe of keff values and their uncertainties:\n{keff_df}\n")
     keff_df.to_csv(KEFF_CSV_NAME)
 
-    convert_keff_to_rho_coef(KEFF_CSV_NAME, RHO_CSV_NAME)
+    convert_keff_to_rho_coef(300, KEFF_CSV_NAME, RHO_CSV_NAME)
     calc_params_coef(RHO_CSV_NAME, PARAMS_CSV_NAME, MODULE_NAME)
     for rho_or_dollars in ['rho','dollars']: plot_data_void(KEFF_CSV_NAME, RHO_CSV_NAME, PARAMS_CSV_NAME, FIGURE_NAME, rho_or_dollars)
 

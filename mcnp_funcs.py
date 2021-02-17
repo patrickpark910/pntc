@@ -199,7 +199,8 @@ def calc_params_coef(rho_csv_name, params_csv_name, module_name):
             params_df.loc[x_value, 'coef dollars'], params_df.loc[x_value, 'coef dollars unc'], \
             params_df.loc[x_value, 'coef rho avg'], params_df.loc[x_value, 'coef dollars avg'] = 0, 0, 0, 0, 0, 0
         else:
-            params_df.loc[x_value, 'D x'] = 100 * round(1.0 - x_value, 1)
+            if module_name == 'void': params_df.loc[x_value, 'D x'] = 100 * round(original_x_value - x_value, 1)
+            if module_name == 'pntc': params_df.loc[x_value, 'D x'] = round(original_x_value - x_value, 1)
             params_df.loc[x_value, 'coef rho'] = params_df.loc[x_value, 'D rho'] / params_df.loc[x_value, 'D x']
             params_df.loc[x_value, 'coef rho unc'] = params_df.loc[x_value, 'rho unc'] / params_df.loc[x_value, 'D x']
             params_df.loc[x_value, 'coef dollars'] = params_df.loc[x_value, 'D dollars'] / params_df.loc[x_value, 'D x']
@@ -666,7 +667,7 @@ Does not return anything. Only makes the actual file changes.
 '''
 
 
-def convert_keff_to_rho_coef(keff_csv_name, rho_csv_name):
+def convert_keff_to_rho_coef(original_x_value, keff_csv_name, rho_csv_name):
     # Assumes the keff.csv has columns labeled "rod" and "rod unc" for keff and keff uncertainty values for a given rod
     keff_df = pd.read_csv(keff_csv_name, index_col=0)
     x_values = keff_df.index.values.tolist()
@@ -689,9 +690,9 @@ def convert_keff_to_rho_coef(keff_csv_name, rho_csv_name):
 
     for x_value in x_values:
         k1 = keff_df.loc[x_value, 'keff']
-        k2 = keff_df.loc[1.0, 'keff']
+        k2 = keff_df.loc[original_x_value, 'keff']
         dk1 = keff_df.loc[x_value, 'keff unc']
-        dk2 = keff_df.loc[1.0, 'keff unc']
+        dk2 = keff_df.loc[original_x_value, 'keff unc']
         k2_minus_k1 = k2 - k1
         k2_times_k1 = k2 * k1
         d_k2_minus_k1 = np.sqrt(dk2 ** 2 + dk1 ** 2)
