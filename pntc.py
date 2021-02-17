@@ -5,7 +5,7 @@ Written by Patrick Park (RO, Physics '22)
 ppark@reed.edu
 
 This project should be available at
-https://github.com/patrickpark910/void/
+https://github.com/patrickpark910/pntc/
 
 First written Feb. 16, 2021
 Last updated Feb. 16, 2021
@@ -26,24 +26,23 @@ Technical Notes
 
 """
 
-import os, sys, multiprocessing
+import os, sys
 import numpy as np
 import pandas as pd
-import matplotlib
 import matplotlib.pyplot as plt
-from scipy import stats
-from scipy.optimize import curve_fit
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 from mcnp_funcs import *
 
 FILEPATH = os.path.dirname(os.path.abspath(__file__))
 WATER_MAT_CARD = '102'
-WATER_DENSITIES = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0] # np.arange(start=0.1,stop=1.0,step=0.1)
+FUEL_TEMPS = [200,250,300,350,400,450,500,650,700,750,800,850,900,950,1000,1050,1100,1150,1200,1250,1300,1350,1400]
 # Prefer hardcoded lists rather than np.arange, which produces imprecise floating points, e.g., 0.7000000...003
+# Select temperature range that covers all study ranges:
+# https://mcnp.lanl.gov/pdf_files/la-ur-12-20338.pdf (slide 9)
 INPUTS_FOLDER_NAME = 'inputs'
 OUTPUTS_FOLDER_NAME = 'outputs'
-MODULE_NAME = 'void'
+MODULE_NAME = 'pntc'
 KEFF_CSV_NAME = f'{MODULE_NAME}_keff.csv'
 RHO_CSV_NAME = f'{MODULE_NAME}_rho.csv'
 PARAMS_CSV_NAME = f'{MODULE_NAME}_parameters.csv'
@@ -52,27 +51,15 @@ FIGURE_NAME = f'{MODULE_NAME}_results.png'
 
 def main():
     initialize_rane()
-    BASE_INPUT_NAME = 'void-a100-h100-r100.i' # find_base_file(FILEPATH)
+    BASE_INPUT_NAME = 'pntc-a100-h100-r100.i' # find_base_file(FILEPATH)
     check_kcode(FILEPATH, BASE_INPUT_NAME)
-
-    """
-    print("The following lines will ask desired rod heights for this calculation.")
-    
-    rod_heights_dict = {}
-    for rod in RODS:
-        height = input(f"Input desired integer height for the {rod} rod: ")
-        rod_heights_dict[rod] = height
-    
-    input_created = change_rod_height(FILEPATH, MODULE_NAME, rod_heights_dict, BASE_INPUT_NAME, INPUTS_FOLDER_NAME)
-    if input_created: print(f"Created {num_inputs_created} new input deck.")
-    if not input_created: print(f"\n--Skipped {num_inputs_skipped} input deck because it already exists.")
-    """
 
     num_inputs_created = 0
     num_inputs_skipped = 0
-    for i in range(0, len(WATER_DENSITIES)):
-        cell_densities_dict = {WATER_MAT_CARD: WATER_DENSITIES[i]}
-        input_created = change_cell_densities(FILEPATH, MODULE_NAME, cell_densities_dict, BASE_INPUT_NAME, INPUTS_FOLDER_NAME)
+    for i in range(0, len(FUEL_TEMPS)):
+        cell_temps_dict = {}
+        for fe_id in list(FE_ID.values()): cell_temps_dict[fe_id] = FUEL_TEMPS[i]
+        input_created = change_cell_temps(FILEPATH, MODULE_NAME, cell_temps_dict, BASE_INPUT_NAME, INPUTS_FOLDER_NAME)
         if input_created: num_inputs_created += 1
         if not input_created: num_inputs_skipped += 1
 
@@ -90,14 +77,14 @@ def main():
     delete_files(f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}",r=True,s=True)
 
     # Setup a dataframe to collect keff values
-    keff_df = pd.DataFrame(columns=["density", "keff", "keff unc"]) # use lower cases to match 'rods' def above
-    keff_df["density"] = WATER_DENSITIES
-    keff_df.set_index("density",inplace=True)
+    keff_df = pd.DataFrame(columns=["x", "keff", "keff unc"]) # use lower cases to match 'rods' def above
+    keff_df["x"] = FUEL_TEMPS
+    keff_df.set_index("x",inplace=True)
 
-    for water_density in WATER_DENSITIES:
-        keff, keff_unc = extract_keff(f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}/o_{MODULE_NAME}-m{WATER_MAT_CARD}-{''.join(c for c in str(water_density) if c not in '.')}.o")
-        keff_df.loc[water_density, 'keff'] = keff
-        keff_df.loc[water_density, 'keff unc'] = keff_unc
+    for fuel_temp in FUEL_TEMPS:
+        keff, keff_unc = extract_keff(f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}/o_{MODULE_NAME}-fuel-{str(''.join(c for c in str(list(cell_temps_dict.values())[0]) if c not in '.')).zfill(4)}.o")
+        keff_df.loc[fuel_temp, 'keff'] = keff
+        keff_df.loc[fuel_temp, 'keff unc'] = keff_unc
 
     print(f"\nDataframe of keff values and their uncertainties:\n{keff_df}\n")
     keff_df.to_csv(KEFF_CSV_NAME)

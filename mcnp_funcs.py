@@ -48,6 +48,7 @@ FE_ID = {'B1': '7202', 'B2': '9678', 'B3': '9679', 'B4': '7946', 'B5': '7945', '
          'F8': '4120', 'F14': '3810', 'F15': '4130', 'F16': '4091', 'F17': '3673', 'F18': '3682',
          'F19': '4132', 'F20': '4046', 'F21': '3865', 'F22': '3743', 'F24': '3835', 'F26': '3676',
          'F27': '3840', 'F28': '3854', 'F29': '4049', 'F30': '4127'}
+MEV_PER_KELVIN = 8.617e-11
 REACT_ADD_RATE_LIMIT_DOLLARS = 0.16
 RODS = ["safe", "shim", "reg"]  # must be in lower case
 
@@ -494,6 +495,74 @@ def change_cell_densities(filepath, module_name, cell_densities_dict, base_input
     return True
 
 
+def change_cell_temps(filepath, module_name, cell_temps_dict, base_input_name, inputs_folder_name):
+    base_input_deck = open(base_input_name, 'r')
+    # Encode new input name with rod heights: "input-a100-h20-r55.i" means safe 100, shim 20, reg 55, etc.
+
+    new_input_name = f'{filepath}/{inputs_folder_name}/{module_name}-fuel-{int(list(cell_temps_dict.values())[0])}.i'
+    # careful not to mix up ' ' and " " here
+
+    # If the inputs folder doesn't exist, create it
+    if not os.path.isdir(inputs_folder_name):
+        os.mkdir(inputs_folder_name)
+
+    # If the input deck exists, skip
+    if os.path.isfile(new_input_name): return False
+
+    new_input_deck = open(new_input_name, 'w+')
+
+    start_marker_cells = "Begin Cells"
+    start_marker_surfs = "Begin Surfaces"
+
+    # Indicates if we are between 'start_marker' and 'end_marker'
+    inside_block_cells = False
+
+    '''
+    'start_marker' and 'end_marker' are what you're searching for in each 
+    line of the whole input deck to indicate start and end of rod parameters. 
+    Thus it needs to be unique, like "Safe Rod (0% Withdrawn)" and "End of Safe Rod".
+    Make sure the input deck contains these markers EXACTLY as they are defined here,
+    e.g. watch for capitalizations or extra spaces between words.
+    '''
+
+    # Now, we're reading the base input deck ('rc.i') line-by-line.
+    for line in base_input_deck:
+        # If we're not inside the block, just copy the line to a new file
+        if inside_block_cells == False:
+            # If this is the line with the 'start_marker', rewrite it to the new file with required changes
+            if start_marker_cells in line:
+                inside_block_cells = True
+                new_input_deck.write(line)
+                continue
+            if start_marker_surfs in line:
+                inside_block_cells = False
+                new_input_deck.write(line)
+                continue
+            new_input_deck.write(line)
+            continue
+        # Logic for what to do when we're inside the block
+        if inside_block_cells == True:
+            # We're now making the actual changes to the cell density
+            # 'line' already has \n at the end, but anything else doesn't
+            if len(line.split()) > 0 and line.split()[0] != 'c' and line.split()[1] in list(cell_temps_dict.keys()):
+                new_input_deck.write(f"c {line}")
+                new_input_deck.write(
+                    f"{edit_cell_temp_code(line, line.split()[1], cell_temps_dict[line.split()[1]])}\n")
+                continue
+            elif len(line.split()) > 0 and line.split()[0] == 'c':
+                new_input_deck.write(line)
+                continue
+            else:
+                new_input_deck.write(line)
+                # new_input_deck.write(f"{' '.join(line.split())}\n") # removes multi-spaces for proper MCNP syntax highlighting
+                # ^that causes way too many issues for multi-line arguments
+                continue
+
+    base_input_deck.close()
+    new_input_deck.close()
+    return True
+
+
 '''
 Performs the necessary changes on the values
 
@@ -528,12 +597,20 @@ def get_core_pos_to_vacate(): pass
 
 def edit_cell_density_code(line, mat_card, new_density):
     entries = line.split()  # use empty line.split() argument to split on any whitespace
-
     if entries[1] == str(mat_card):
         entries[2] = str(-new_density)
         new_line = ' '.join(entries)
+        return new_line
+    else: return line
 
-    return new_line
+
+def edit_cell_temp_code(line, mat_card, new_temp):
+    entries = line.split()
+    if entries[1] == str(mat_card): # use empty line.split() argument to split on any whitespace
+        entries.insert(entries.index('$'), f"tmp={new_temp*MEV_PER_KELVIN}")
+        new_line = ' '.join(entries)
+        return new_line
+    else: return line
 
 
 def convert_keff_to_rho(keff_csv_name, rho_csv_name):
