@@ -28,6 +28,13 @@ To fully calculate fuel temp coef, you need to change the TMP= value on each cel
 AND switch out the S(a,b) cross section library (e.g., 92235.80c <-- ) for the right TMP.
 Look up the right S(a,b) library names in LA-UR-13-21822.
 
+mcnp_funcs only has TEMP_DICTS using ENDF VII libraries, as ENDF VI do not all have DN/UR calculations
+Look up DN and UR here: https://mcnp.lanl.gov/pdf_files/la-ur-13-21822v4.pdf
+
+MCNP6.2 does not support all cross-section (xs) libraries.
+If the xs library is unsupported, a fatal error will occur.
+./MCNP_DATA/xsdir_mcnp6.2 contains a list of all the xs libraries supported by MCNP6.2.
+
 """
 
 import os, sys
@@ -40,7 +47,8 @@ from mcnp_funcs import *
 
 FILEPATH = os.path.dirname(os.path.abspath(__file__))
 WATER_MAT_CARD = '102'
-FUEL_TEMPS = [200,250,300,350,400,450,500,650,700,750,800,850,900,950,1000,1050,1100,1150,1200,1250,1300,1350,1400]
+FUEL_TEMPS = list(U235_TEMP_DICT.keys())
+# [200,250,300,350,400,450,500,650,700,750,800,850,900,950,1000,1050,1100,1150,1200,1250,1300,1350,1400]
 # Prefer hardcoded lists rather than np.arange, which produces imprecise floating points, e.g., 0.7000000...003
 # Select temperature range that covers all study ranges:
 # https://mcnp.lanl.gov/pdf_files/la-ur-12-20338.pdf (slide 9)
@@ -55,7 +63,7 @@ FIGURE_NAME = f'{MODULE_NAME}_results.png'
 
 def main():
     initialize_rane()
-    """
+
     BASE_INPUT_NAME = 'pntc-a100-h100-r100.i' # find_base_file(FILEPATH)
     check_kcode(FILEPATH, BASE_INPUT_NAME)
 
@@ -64,7 +72,7 @@ def main():
     for i in range(0, len(FUEL_TEMPS)):
         cell_temps_dict = {}
         for fe_id in list(FE_ID.values()): cell_temps_dict[fe_id] = FUEL_TEMPS[i]
-        input_created = change_cell_temps(FILEPATH, MODULE_NAME, cell_temps_dict, BASE_INPUT_NAME, INPUTS_FOLDER_NAME)
+        input_created = change_cell_and_mat_temps(FILEPATH, MODULE_NAME, cell_temps_dict, BASE_INPUT_NAME, INPUTS_FOLDER_NAME)
         if input_created: num_inputs_created += 1
         if not input_created: num_inputs_skipped += 1
 
@@ -87,17 +95,18 @@ def main():
     keff_df.set_index("x",inplace=True)
 
     for fuel_temp in FUEL_TEMPS:
-        keff, keff_unc = extract_keff(f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}/o_{MODULE_NAME}-fuel-{str(fuel_temp)}.o")
+        keff, keff_unc = extract_keff(f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}/o_{MODULE_NAME}-fuel-{str(int(fuel_temp)).zfill(4)}.o")
         keff_df.loc[fuel_temp, 'keff'] = keff
         keff_df.loc[fuel_temp, 'keff unc'] = keff_unc
     
     print(f"\nDataframe of keff values and their uncertainties:\n{keff_df}\n")
     keff_df.to_csv(KEFF_CSV_NAME)
-    """
-    convert_keff_to_rho_coef(300, KEFF_CSV_NAME, RHO_CSV_NAME)
+    
+    convert_keff_to_rho_coef(float(294), KEFF_CSV_NAME, RHO_CSV_NAME)
     calc_params_coef(RHO_CSV_NAME, PARAMS_CSV_NAME, MODULE_NAME)
+    """
     for rho_or_dollars in ['rho','dollars']: plot_data_void(KEFF_CSV_NAME, RHO_CSV_NAME, PARAMS_CSV_NAME, FIGURE_NAME, rho_or_dollars)
-
+    """
     print(f"\n************************ PROGRAM COMPLETE ************************\n")
 
 

@@ -52,6 +52,20 @@ MEV_PER_KELVIN = 8.617e-11
 REACT_ADD_RATE_LIMIT_DOLLARS = 0.16
 RODS = ["safe", "shim", "reg"]  # must be in lower case
 
+U235_TEMP_DICT = {294: '92235.80c', 600: '92235.81c', 900: '92235.82c', 1200: '92235.83c',
+                  2500: '92235.84c', 0.1: '92235.85c', 250: '92235.86c', 77: '92235.67c', 3000: '92235.68c'}
+U238_TEMP_DICT = {294: '92238.80c', 600: '92238.81c', 900: '92238.82c', 1200: '92238.83c',
+                  2500: '92238.84c', 0.1: '92238.85c', 250: '92238.86c', 77: '92238.67c', 3000: '92238.68c'}
+PU239_TEMP_DICT = {294: '94239.80c', 600: '94239.81c', 900: '94239.82c', 1200: '94239.83c',
+                   2500: '94239.84c', 0.1: '94239.85c', 250: '94239.86c', 77: '94239.67c', 3000: '94239.68c'}
+ZR_TEMP_DICT = {294: '40000.66c', 300: '40000.56c', 587: '40000.58c'}
+H1_TEMP_DICT = {294: '1001.80c', 600: '1001.81c', 900: '1001.82c', 1200: '1001.83c', 2500: '1001.84c',
+                0.1: '1001.85c', 250: '1001.86c'}
+HZR_TEMP_DICT = {294: 'h/zr.20t', 400: 'h/zr.21t', 500: 'h/zr.22t', 600: 'h/zr.23t', 700: 'h/zr.24t',
+                 800: 'h/zr.25t', 1000: 'h/zr.26t', 1200: 'h/zr.27t'}
+ZRH_TEMP_DICT = {294: 'zr/h.30t', 400: 'zr/h.31t', 500: 'zr/h.32t', 600: 'zr/h.33t', 700: 'zr/h.34t',
+                 800: 'zr/h.35t', 1000: 'zr/h.36t', 1200: 'zr/h.37t'}
+
 
 def initialize_rane():
     print(
@@ -496,11 +510,11 @@ def change_cell_densities(filepath, module_name, cell_densities_dict, base_input
     return True
 
 
-def change_cell_temps(filepath, module_name, cell_temps_dict, base_input_name, inputs_folder_name):
+def change_cell_and_mat_temps(filepath, module_name, cell_temps_dict, base_input_name, inputs_folder_name):
     base_input_deck = open(base_input_name, 'r')
     # Encode new input name with rod heights: "input-a100-h20-r55.i" means safe 100, shim 20, reg 55, etc.
 
-    new_input_name = f'{filepath}/{inputs_folder_name}/{module_name}-fuel-{int(list(cell_temps_dict.values())[0])}.i'
+    new_input_name = f'{filepath}/{inputs_folder_name}/{module_name}-fuel-{str(int(list(cell_temps_dict.values())[0])).zfill(4)}.i'
     # careful not to mix up ' ' and " " here
 
     # If the inputs folder doesn't exist, create it
@@ -514,9 +528,14 @@ def change_cell_temps(filepath, module_name, cell_temps_dict, base_input_name, i
 
     start_marker_cells = "Begin Cells"
     start_marker_surfs = "Begin Surfaces"
+    # start_marker_data = "Begin Options"
+    start_marker_fuel = "Begin Fuel Materials"
+    end_marker_fuel = "End Fuel Materials"
 
     # Indicates if we are between 'start_marker' and 'end_marker'
     inside_block_cells = False
+    inside_block_surfs = False
+    inside_block_fuel = False
 
     '''
     'start_marker' and 'end_marker' are what you're searching for in each 
@@ -528,24 +547,31 @@ def change_cell_temps(filepath, module_name, cell_temps_dict, base_input_name, i
 
     # Now, we're reading the base input deck ('rc.i') line-by-line.
     for line in base_input_deck:
-        # If we're not inside the block, just copy the line to a new file
-        if inside_block_cells == False:
-            # If this is the line with the 'start_marker', rewrite it to the new file with required changes
+        # If this is the line with the 'start_marker', rewrite it to the new file with required changes
+        if not inside_block_cells and not inside_block_surfs and not inside_block_fuel:
             if start_marker_cells in line:
                 inside_block_cells = True
                 new_input_deck.write(line)
                 continue
-            if start_marker_surfs in line:
-                inside_block_cells = False
-                new_input_deck.write(line)
-                continue
+            new_input_deck.write(line)
+            continue
+        if start_marker_surfs in line:
+            inside_block_cells, inside_block_surfs, inside_block_fuel = False, True, False
+            new_input_deck.write(line)
+            continue
+        if start_marker_fuel in line:
+            inside_block_cells, inside_block_surfs, inside_block_fuel = False, False, True
+            new_input_deck.write(line)
+            continue
+        if end_marker_fuel in line:
+            inside_block_cells, inside_block_surfs, inside_block_fuel = False, False, False
             new_input_deck.write(line)
             continue
         # Logic for what to do when we're inside the block
-        if inside_block_cells == True:
+        if inside_block_cells:
             # We're now making the actual changes to the cell density
             # 'line' already has \n at the end, but anything else doesn't
-            if len(line.split()) > 0 and line.split()[0] != 'c' and line.split()[1] in list(cell_temps_dict.keys()):
+            if len(line.split()) > 0 and line.split()[0] != 'c' and line.split()[1] in cell_temps_dict.keys():
                 new_input_deck.write(f"c {line}")
                 new_input_deck.write(
                     f"{edit_cell_temp_code(line, line.split()[1], cell_temps_dict[line.split()[1]])}\n")
@@ -557,6 +583,21 @@ def change_cell_temps(filepath, module_name, cell_temps_dict, base_input_name, i
                 new_input_deck.write(line)
                 # new_input_deck.write(f"{' '.join(line.split())}\n") # removes multi-spaces for proper MCNP syntax highlighting
                 # ^that causes way too many issues for multi-line arguments
+                continue
+        if inside_block_surfs:
+            new_input_deck.write(line)
+            continue
+        if inside_block_fuel:
+            if len(line.split()) > 0 and line.split()[0] != 'c':
+                new_input_deck.write(f"c {line}")
+                new_input_deck.write(
+                    f"{edit_mat_temp_code(line, list(cell_temps_dict.values())[0])}\n")
+                continue
+            elif len(line.split()) > 0 and line.split()[0] == 'c':
+                new_input_deck.write(line)
+                continue
+            else:
+                new_input_deck.write(line)
                 continue
 
     base_input_deck.close()
@@ -602,16 +643,60 @@ def edit_cell_density_code(line, mat_card, new_density):
         entries[2] = str(-new_density)
         new_line = ' '.join(entries)
         return new_line
-    else: return line
+    else:
+        return line
 
 
 def edit_cell_temp_code(line, mat_card, new_temp):
-    entries = line.split()
-    if entries[1] == str(mat_card): # use empty line.split() argument to split on any whitespace
-        entries.insert(entries.index('$'), f"tmp={new_temp*MEV_PER_KELVIN}")
-        new_line = ' '.join(entries)
-        return new_line
-    else: return line
+    new_temp, entries = float(new_temp), line.split()
+    if entries[1] == str(mat_card):  # use empty line.split() argument to split on any whitespace
+        if '$' in entries:
+            entries.insert(entries.index('$'), f"tmp={new_temp * MEV_PER_KELVIN}")
+            new_line = ' '.join(entries)
+            return new_line
+        else:
+            entries.append(f"tmp={new_temp * MEV_PER_KELVIN}")
+            new_line = ' '.join(entries)
+            return new_line
+    else:
+        return line
+
+
+def edit_mat_temp_code(line, new_temp):
+    # print('edit mat temp code engaged')
+    entries = line.split('$')[0].split()  # only counts entries before the Fortran in-line comment marker $
+    for entry in entries:
+        if entry in list(U235_TEMP_DICT.values()):
+            # print([int(i) for i in list(U235_TEMP_DICT.keys())])
+            new_temp = find_closest_value(list(U235_TEMP_DICT.keys()), new_temp)
+            return line.replace(entry, U235_TEMP_DICT[new_temp]).rstrip()
+        # by default, the original line has a trailing \n, so we need to get rid of it in the new_line
+        # because the change_cell_and_mat_temps() function already adds a \n to each new line
+        elif entry in list(U238_TEMP_DICT.values()):
+            new_temp = find_closest_value(list(U238_TEMP_DICT.keys()), new_temp)
+            return line.replace(entry, U238_TEMP_DICT[new_temp]).rstrip()
+        elif entry in list(PU239_TEMP_DICT.values()):
+            new_temp = find_closest_value(list(PU239_TEMP_DICT.keys()), new_temp)
+            return line.replace(entry, PU239_TEMP_DICT[new_temp]).rstrip()
+        elif entry in list(ZR_TEMP_DICT.values()):
+            new_temp = find_closest_value(list(ZR_TEMP_DICT.keys()), new_temp)
+            return line.replace(entry, ZR_TEMP_DICT[new_temp]).rstrip()
+        elif entry in list(H1_TEMP_DICT.values()):
+            new_temp = find_closest_value(list(H1_TEMP_DICT.keys()), new_temp)
+            return line.replace(entry, H1_TEMP_DICT[new_temp]).rstrip()
+    if entries[0].startswith('mt'):
+        for i in range(0, len(entries)):
+            if entries[i].startswith('h/zr'):
+                new_temp = find_closest_value(list(HZR_TEMP_DICT.keys()), new_temp)
+                entries[i] = HZR_TEMP_DICT[new_temp]
+            elif entries[i].startswith('zr/h'):
+                new_temp = find_closest_value(list(ZRH_TEMP_DICT.keys()), new_temp)
+                entries[i] = ZRH_TEMP_DICT[new_temp]
+        return f"{' '.join(entries)} $ {' '.join(line.split('$')[-1:1])}".rstrip()
+
+
+def find_closest_value(lst, K):
+    return lst[min(range(len(lst)), key=lambda i: abs(lst[i] - K))]
 
 
 def convert_keff_to_rho(keff_csv_name, rho_csv_name):

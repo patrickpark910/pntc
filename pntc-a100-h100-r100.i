@@ -128,8 +128,8 @@ c    Rewrote fuel mats with 2020 burnup data
 c    Consolidated invidual fuel meat section mat cards into one mat card for each FE
 c    Removed vol(ume)=77.096 argument from each fuel meat cell
 c
-c
-c
+c    2021-02-16
+c    Added fuel mat start/end markers
 c
 c
 c
@@ -231,7 +231,7 @@ c C ring
 308 0 10 -11 -20 trcl=(-3.99034 -6.91134 0)     imp:n=1 fill=8105 $  
 310 0 10 -11 -20 trcl=(-7.98068  0.00000 0)     imp:n=1 fill=8736 $  
 311 0 10 -11 -20 trcl=(-6.91130  3.99030 0)     imp:n=1 fill=8735 $  
-312 0 10 -11 -20 trcl=(-3.99030  6.91130 0)     imp:n=1 fill=10705 $  
+312 0 10 -11 -20 trcl=(-3.99030  6.91130 0)     imp:n=1 fill=1070 $  
 c
 c D ring
 401 0 10 -11 -20 trcl=( 0.00000  11.9456 0)     imp:n=1 fill=3679 $  
@@ -750,25 +750,25 @@ c
 c
 c --- 10705 - SS clad (TOS210D210) universe ---
 c
-1070501  105  -7.85     312300 -312301 -311302          imp:n=1 u=10705  $ Lower grid plate pin
-1070502  102  -1.00     312300 -312301  311302 -311306  imp:n=1 u=10705  $ Water around grid plate pin 
-1070503  105  -7.85     312301 -312302 -311305          imp:n=1 u=10705  $ Bottom casing 
-1070504  102  -1.00     312301 -312306  311305 -311306  imp:n=1 u=10705  $ Water around fuel element
-1070505  106  -1.56     312302 -312303 -311304          imp:n=1 u=10705  $ Lower graphite slug 
-1070506  105  -7.85     312302 -312305  311304 -311305  imp:n=1 u=10705  $ Fuel cladding
-1070507  108   0.042234 312303 -312304 -311301          imp:n=1 u=10705  $ Zirc pin 
-1070508 10705 -5.66 312303 -302303  311301 -311304   imp:n=1 u=10705 $ Fuel meat section 1
-1070509 10705 -5.66 302303 -302306  311301 -311304   imp:n=1 u=10705 $ Fuel meat section 2
-1070510 10705 -5.66 302306 -302309  311301 -311304   imp:n=1 u=10705 $ Fuel meat section 3
-1070511 10705 -5.66 302309 -302312  311301 -311304   imp:n=1 u=10705 $ Fuel meat section 4
-1070512 10705 -5.66 302312 -312304  311301 -311304   imp:n=1 u=10705 $ Fuel meat section 5
-1070513  106  -1.56     312304 -312305 -311304          imp:n=1 u=10705  $ Upper graphite spacer
-1070514  105  -7.85     312305 -312306 -311305          imp:n=1 u=10705  $ SS top cap 
-1070515  105  -7.85     312306 -312307 -311303          imp:n=1 u=10705  $ Tri-flute 
-1070516  102  -1.00     312306 -312307  311303 -311306  imp:n=1 u=10705  $ Water around tri-flute 
-1070517  105  -7.85     312307 -312308 -311302          imp:n=1 u=10705  $ Fuel tip
-1070518  102  -1.00     312307 -312308  311302 -311306  imp:n=1 u=10705  $ Water around fuel tip
-1070519  102  -1.00     312308 -312309 -311306          imp:n=1 u=10705  $ Water above fuel element
+107001  105  -7.85     312300 -312301 -311302          imp:n=1 u=1070  $ Lower grid plate pin
+107002  102  -1.00     312300 -312301  311302 -311306  imp:n=1 u=1070  $ Water around grid plate pin 
+107003  105  -7.85     312301 -312302 -311305          imp:n=1 u=1070  $ Bottom casing 
+107004  102  -1.00     312301 -312306  311305 -311306  imp:n=1 u=1070  $ Water around fuel element
+107005  106  -1.56     312302 -312303 -311304          imp:n=1 u=1070  $ Lower graphite slug 
+107006  105  -7.85     312302 -312305  311304 -311305  imp:n=1 u=1070  $ Fuel cladding
+107007  108   0.042234 312303 -312304 -311301          imp:n=1 u=1070  $ Zirc pin 
+107008 1070 -5.66 312303 -302303  311301 -311304   imp:n=1 u=1070 $ Fuel meat section 1
+107009 1070 -5.66 302303 -302306  311301 -311304   imp:n=1 u=1070 $ Fuel meat section 2
+107010 1070 -5.66 302306 -302309  311301 -311304   imp:n=1 u=1070 $ Fuel meat section 3
+107011 1070 -5.66 302309 -302312  311301 -311304   imp:n=1 u=1070 $ Fuel meat section 4
+107012 1070 -5.66 302312 -312304  311301 -311304   imp:n=1 u=1070 $ Fuel meat section 5
+107013  106  -1.56     312304 -312305 -311304          imp:n=1 u=1070  $ Upper graphite spacer
+107014  105  -7.85     312305 -312306 -311305          imp:n=1 u=1070  $ SS top cap 
+107015  105  -7.85     312306 -312307 -311303          imp:n=1 u=1070  $ Tri-flute 
+107016  102  -1.00     312306 -312307  311303 -311306  imp:n=1 u=1070  $ Water around tri-flute 
+107017  105  -7.85     312307 -312308 -311302          imp:n=1 u=1070  $ Fuel tip
+107018  102  -1.00     312307 -312308  311302 -311306  imp:n=1 u=1070  $ Water around fuel tip
+107019  102  -1.00     312308 -312309 -311306          imp:n=1 u=1070  $ Water above fuel element
 c
 c
 c
@@ -5268,7 +5268,7 @@ c
 c ------------------------------
 c ------- Fuel materials -------
 c ------------------------------
-c
+c --Begin Fuel Materials--
 c
 c
 c
@@ -5353,12 +5353,12 @@ m9679    92235.80c 9.308589e+22 $ 36.332238 g
 mt9679 h/zr.10t zr/h.10t
 c
 c
-m10705    92235.80c 9.532478e+22 $ 37.206096 g
+m1070    92235.80c 9.532478e+22 $ 37.206096 g
          92238.80c 3.871613e+23 $ 153.045581 g
          94239.80c 5.145615e+19 $ 0.020426 g
          40000.66c 1.328973e+25 $ 2013.189154 g
           1001.80c 2.093133e+25 $ 35.034079 g
-mt10705 h/zr.10t zr/h.10t
+mt1070 h/zr.10t zr/h.10t
 c
 c
 m3671    92235.80c 8.242023e+22 $ 32.169337 g
@@ -6088,7 +6088,7 @@ m8736    92235.80c 9.788822e+22 $ 38.206628 g
           1001.80c 2.113718e+25 $ 35.378634 g
 mt8736 h/zr.10t zr/h.10t
 c
-c
+c --End Fuel Materials--
 c
 c
 c
