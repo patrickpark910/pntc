@@ -213,13 +213,16 @@ def calc_params_coef(rho_csv_name, params_csv_name, module_name):
             params_df.loc[x_value, 'coef dollars'], params_df.loc[x_value, 'coef dollars unc'], \
             params_df.loc[x_value, 'coef rho avg'], params_df.loc[x_value, 'coef dollars avg'] = 0, 0, 0, 0, 0, 0
         else:
-            if module_name == 'void': params_df.loc[x_value, 'D x'] = -100 * round(x_value - original_x_value, 1)
-            if module_name == 'pntc': params_df.loc[x_value, 'D x'] = round(x_value - original_x_value, 1)
+            if module_name == 'void':
+                params_df.loc[x_value, 'D x'] = -100 * round(x_value - original_x_value, 1)
+            elif module_name == 'pntc': params_df.loc[x_value, 'D x'] = round(x_value - original_x_value, 1)
+
             params_df.loc[x_value, 'coef rho'] = params_df.loc[x_value, 'D rho'] / params_df.loc[x_value, 'D x']
-            params_df.loc[x_value, 'coef rho unc'] = params_df.loc[x_value, 'rho unc'] / params_df.loc[x_value, 'D x']
             params_df.loc[x_value, 'coef dollars'] = params_df.loc[x_value, 'D dollars'] / params_df.loc[x_value, 'D x']
-            params_df.loc[x_value, 'coef dollars unc'] = params_df.loc[x_value, 'dollars unc'] / params_df.loc[
-                x_value, 'D x']
+
+            if module_name == 'void' or 'pntc':
+                params_df.loc[x_value, 'coef rho unc'] = params_df.loc[x_value, 'rho unc'] / 100
+                params_df.loc[x_value, 'coef dollars unc'] = params_df.loc[x_value, 'dollars unc'] / 100
 
     for x_value in params_df.index.values.tolist():
         x = []
