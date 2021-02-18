@@ -8,7 +8,7 @@ This project should be available at
 https://github.com/patrickpark910/pntc/
 
 First written Feb. 16, 2021
-Last updated Feb. 16, 2021
+Last updated Feb. 17, 2021
 
 __________________
 Default MCNP units
