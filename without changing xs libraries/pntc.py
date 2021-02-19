@@ -200,7 +200,7 @@ def plot_data_void(keff_csv_name, rho_csv_name, params_csv_name, figure_name, rh
                 label=r'y=-{:.1f}$x^2$+{:.0f}$x${:.0f},  $R^2$={:.2f},  $\sigma$={:.2f}'.format(
                     np.abs(eq_rho[0]), eq_rho[1], eq_rho[2], r2_rho, sd_rho))
 
-    # Plot data for void
+    # Plot data for coef_void
     y_void, y_void_unc = [], []
     for water_density in x:
         if rho_or_dollars == 'rho': y_void.append(params_df.loc[water_density,'coef rho']), y_void_unc.append(params_df.loc[water_density, 'coef rho unc'])

@@ -59,7 +59,7 @@ def initialize_rane():
 
 
 def find_base_file(filepath):
-    # filepath: string with current folder directory name, e.g. "C:/MCNP6/facilities/reed/rodcal-mcnp"
+    # filepath: string with current folder directory name, e.g. "C:/MCNP6/facilities/reed/rodcal_mcnp"
     base_input_name = None
     while base_input_name == None:
         potential_base_input_name = input('Input base MCNP file name, including extension: ')
@@ -199,7 +199,7 @@ def calc_params_coef(rho_csv_name, params_csv_name, module_name):
             params_df.loc[x_value, 'coef dollars'], params_df.loc[x_value, 'coef dollars unc'], \
             params_df.loc[x_value, 'coef rho avg'], params_df.loc[x_value, 'coef dollars avg'] = 0, 0, 0, 0, 0, 0
         else:
-            if module_name == 'void': params_df.loc[x_value, 'D x'] = -100 * round(x_value - original_x_value, 1)
+            if module_name == 'coef_void': params_df.loc[x_value, 'D x'] = -100 * round(x_value - original_x_value, 1)
             if module_name == 'pntc': params_df.loc[x_value, 'D x'] = round(x_value - original_x_value, 1)
             params_df.loc[x_value, 'coef rho'] = params_df.loc[x_value, 'D rho'] / params_df.loc[x_value, 'D x']
             params_df.loc[x_value, 'coef rho unc'] = params_df.loc[x_value, 'rho unc'] / params_df.loc[x_value, 'D x']
@@ -209,7 +209,7 @@ def calc_params_coef(rho_csv_name, params_csv_name, module_name):
 
     for x_value in params_df.index.values.tolist():
         x = []
-        if str(module_name).lower() == 'void':
+        if str(module_name).lower() == 'coef_void':
             x = [i for i in params_df.index.values.tolist() if x_value <= i <= original_x_value]
         elif str(module_name).lower() == 'pntc':
             x = [i for i in params_df.index.values.tolist() if original_x_value <= i <= x_value]

@@ -64,7 +64,7 @@ FIGURE_NAME = f'{MODULE_NAME}_results.png'
 
 def main():
     initialize_rane()
-    """
+
     BASE_INPUT_NAME = 'pntc-a100-h100-r100.i'  # find_base_file(FILEPATH)
     check_kcode(FILEPATH, BASE_INPUT_NAME)
 
@@ -98,13 +98,13 @@ def main():
 
     for fuel_temp in FUEL_TEMPS:
         keff, keff_unc = extract_keff(
-            f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}/o_{MODULE_NAME}-fuel-{str(int(fuel_temp)).zfill(4)}.o")
+            f"{FILEPATH}/{OUTPUTS_FOLDER_NAME}/o_{MODULE_NAME}-temp-{str(int(fuel_temp)).zfill(4)}.o")
         keff_df.loc[fuel_temp, 'keff'] = keff
         keff_df.loc[fuel_temp, 'keff unc'] = keff_unc
 
     print(f"\nDataframe of keff values and their uncertainties:\n{keff_df}\n")
     keff_df.to_csv(KEFF_CSV_NAME)
-    """
+
     convert_keff_to_rho_coef(float(0.1), KEFF_CSV_NAME, RHO_CSV_NAME)
     calc_params_coef(RHO_CSV_NAME, PARAMS_CSV_NAME, MODULE_NAME)
 
@@ -143,12 +143,12 @@ def plot_data_pntc(keff_csv_name, rho_csv_name, params_csv_name, figure_name, rh
     legend_fontsize = "x-large"
     # fontsize: int or {'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}
     my_dpi = 320
-    x_label = r"Fuel temperature ($\degree$K) "
+    x_label = r"Fuel temperature (K) "
     y_label_keff, y_label_rho, y_label_coef = r"Effective multiplication factor ($k_{eff}$)", \
                                               r"Reactivity ($\%\Delta k/k$)", \
-                                              r"Fuel temperature coefficient ((%$\Delta k/k$)/$\degree$K)"
+                                              r"Fuel temperature coefficient ((%$\Delta k/k$)/$\degree$C)"
     if rho_or_dollars == 'dollars':
-        y_label_rho, y_label_coef = r"Reactivity ($\Delta$\$)", r"Fuel temperature coefficient ($\Delta$\$/$\degree$K)"
+        y_label_rho, y_label_coef = r"Reactivity ($\Delta$\$)", r"Fuel temperature coefficient ($\Delta$\$/$\degree$C)"
 
     plot_color = ["tab:red", "tab:blue", "tab:green"]
 
@@ -158,13 +158,13 @@ def plot_data_pntc(keff_csv_name, rho_csv_name, params_csv_name, figure_name, rh
     ax_keff_y_min, ax_keff_y_max = 0.85, 1.1
     ax_keff_y_major_ticks_interval, ax_keff_y_minor_ticks_interval = 0.05, 0.01
 
-    ax_rho_y_min, ax_rho_y_max = -16, 1
+    ax_rho_y_min, ax_rho_y_max = -14, 2
     ax_rho_y_major_ticks_interval, ax_rho_y_minor_ticks_interval = 2, 1
     if rho_or_dollars == 'dollars':
         ax_rho_y_min, ax_rho_y_max = -20, 1.5
         ax_rho_y_major_ticks_interval, ax_rho_y_minor_ticks_interval = 5, 1
 
-    ax_pntc_y_min, ax_pntc_y_max = -0.025,0.005
+    ax_pntc_y_min, ax_pntc_y_max = -0.024,0.004
     ax_pntc_y_major_ticks_interval, ax_pntc_y_minor_ticks_interval = 0.01, 0.002
     if rho_or_dollars == 'dollars':
         ax_pntc_y_min, ax_pntc_y_max = -0.02,0.004

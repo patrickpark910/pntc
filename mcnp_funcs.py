@@ -4,7 +4,7 @@ AUXILLIARY MCNP FUNCTIONS
 Written by Patrick Park (RO, Physics '22)
 ppark@reed.edu
 First published: Dec. 30, 2020
-Last updated: Feb. 16, 2021
+Last updated: Feb. 17, 2021
 
 __________________
 Default MCNP units
@@ -52,6 +52,7 @@ MEV_PER_KELVIN = 8.617e-11
 REACT_ADD_RATE_LIMIT_DOLLARS = 0.16
 RODS = ["safe", "shim", "reg"]  # must be in lower case
 
+# From LA-UR-13-21822
 U235_TEMP_DICT = {294: '92235.80c', 600: '92235.81c', 900: '92235.82c', 1200: '92235.83c',
                   2500: '92235.84c', 0.1: '92235.85c', 250: '92235.86c', 77: '92235.67c', 3000: '92235.68c'}
 U238_TEMP_DICT = {294: '92238.80c', 600: '92238.81c', 900: '92238.82c', 1200: '92238.83c',
@@ -65,6 +66,12 @@ HZR_TEMP_DICT = {294: 'h/zr.20t', 400: 'h/zr.21t', 500: 'h/zr.22t', 600: 'h/zr.2
                  800: 'h/zr.25t', 1000: 'h/zr.26t', 1200: 'h/zr.27t'}
 ZRH_TEMP_DICT = {294: 'zr/h.30t', 400: 'zr/h.31t', 500: 'zr/h.32t', 600: 'zr/h.33t', 700: 'zr/h.34t',
                  800: 'zr/h.35t', 1000: 'zr/h.36t', 1200: 'zr/h.37t'}
+WATER_TEMP_DICT = {294: 'lwtr.20t', 350: 'lwtr.21t', 400: 'lwtr.22t', 450: 'lwtr.23t', 500: 'lwtr.24t',
+                   550: 'lwtr.25t', 600: 'lwtr.26t', 650: 'lwtr.27t', 800: 'lwtr.28t'}
+
+WATER_MAT_CARD = '102'
+FUEL_MAT_CARDS_LIST = list(FE_ID.values())
+MOD_MAT_CARDS_LIST = [WATER_MAT_CARD]
 
 
 def initialize_rane():
@@ -73,7 +80,7 @@ def initialize_rane():
 
 
 def find_base_file(filepath):
-    # filepath: string with current folder directory name, e.g. "C:/MCNP6/facilities/reed/rodcal-mcnp"
+    # filepath: string with current folder directory name, e.g. "C:/MCNP6/facilities/reed/rodcal_mcnp"
     base_input_name = None
     while base_input_name == None:
         potential_base_input_name = input('Input base MCNP file name, including extension: ')
@@ -154,8 +161,8 @@ def run_mcnp(filepath, input_deck_filepath, outputs_folder_name, tasks_to_use):
 def delete_files(target_folder_filepath, o=False, r=False, s=False):
     # Default args are False unless specified in command
     # NB: os.remove(f'*.r') does not work bc os.remove does not take wildcards (*)
-    # if o: 
-    #    for file in glob.glob(f'{target_folder_filepath}/*.o'): os.remove(file) 
+    # if o:
+    #    for file in glob.glob(f'{target_folder_filepath}/*.o'): os.remove(file)
     if r:
         for file in glob.glob(f'{target_folder_filepath}/*.r'): os.remove(file)
     if s:
@@ -213,20 +220,21 @@ def calc_params_coef(rho_csv_name, params_csv_name, module_name):
             params_df.loc[x_value, 'coef dollars'], params_df.loc[x_value, 'coef dollars unc'], \
             params_df.loc[x_value, 'coef rho avg'], params_df.loc[x_value, 'coef dollars avg'] = 0, 0, 0, 0, 0, 0
         else:
-            if module_name == 'void':
+            if module_name == 'coef_void':
                 params_df.loc[x_value, 'D x'] = -100 * round(x_value - original_x_value, 1)
-            elif module_name == 'pntc': params_df.loc[x_value, 'D x'] = round(x_value - original_x_value, 1)
+            elif module_name == 'pntc':
+                params_df.loc[x_value, 'D x'] = round(x_value - original_x_value, 1)
 
             params_df.loc[x_value, 'coef rho'] = params_df.loc[x_value, 'D rho'] / params_df.loc[x_value, 'D x']
             params_df.loc[x_value, 'coef dollars'] = params_df.loc[x_value, 'D dollars'] / params_df.loc[x_value, 'D x']
 
-            if module_name == 'void' or 'pntc':
+            if module_name == 'coef_void' or 'pntc':
                 params_df.loc[x_value, 'coef rho unc'] = params_df.loc[x_value, 'rho unc'] / 100
                 params_df.loc[x_value, 'coef dollars unc'] = params_df.loc[x_value, 'dollars unc'] / 100
 
     for x_value in params_df.index.values.tolist():
         x = []
-        if str(module_name).lower() == 'void':
+        if str(module_name).lower() == 'coef_void':
             x = [i for i in params_df.index.values.tolist() if x_value <= i <= original_x_value]
         elif str(module_name).lower() == 'pntc':
             x = [i for i in params_df.index.values.tolist() if original_x_value <= i <= x_value]
@@ -517,7 +525,7 @@ def change_cell_and_mat_temps(filepath, module_name, cell_temps_dict, base_input
     base_input_deck = open(base_input_name, 'r')
     # Encode new input name with rod heights: "input-a100-h20-r55.i" means safe 100, shim 20, reg 55, etc.
 
-    new_input_name = f'{filepath}/{inputs_folder_name}/{module_name}-fuel-{str(int(list(cell_temps_dict.values())[0])).zfill(4)}.i'
+    new_input_name = f'{filepath}/{inputs_folder_name}/{module_name}-temp-{str(int(list(cell_temps_dict.values())[0])).zfill(4)}.i'
     # careful not to mix up ' ' and " " here
 
     # If the inputs folder doesn't exist, create it
